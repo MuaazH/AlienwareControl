@@ -80,7 +80,7 @@ namespace alienware {
 		bool Reset();
 		void Close();
 		bool Update(ArrayDeque<LightBlock *> *act, bool store = false);
-		bool TurnOn(unsigned int brightness);
+		bool TurnOn(const byte *lights, unsigned int count, unsigned int brightness);
 	};
 }
 

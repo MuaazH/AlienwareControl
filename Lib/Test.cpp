@@ -3,19 +3,18 @@
 #include "lights.h"
 
 
-using namespace std;
 using namespace alienware;
 
 int main() {
 	Lights lights;
 
-	cout << "[ .... ] Initializing" << endl;
+	std::cout << "[ .... ] Initializing" << std::endl;
 	int pid = lights.Init(ALEINWARE_VID);
 	if (pid < 0) {
-		cout << "[ FAIL ] Initializing" << endl;
+		std::cout << "[ FAIL ] Initializing" << std::endl;
 		return 0;
 	}
-	cout << "[  OK  ] Initializing" << endl;
+	std::cout << "[  OK  ] Initializing" << std::endl;
 
 	ArrayDeque<LightBlock *> list;
 
@@ -24,7 +23,7 @@ int main() {
 
 	Action color1 = { AlienFX_A_Color, 160, 160,   0, 100, 255 };
 	Action color2 = { AlienFX_A_Color, 160, 160, 255,  70,   0 };
-	Action color3 = { AlienFX_A_Color, 160, 160,   0,   4,   4 };
+	Action color3 = { AlienFX_A_Color, 160, 160, 255,   4,   4 };
 
 
 	LightBlock kb0 = { 0 };
@@ -92,12 +91,30 @@ int main() {
 	list.Add(&barA);
 	list.Add(&barB);
 
-	cout << "[ .... ] Updating lights" << endl;
+	std::cout << "[ .... ] Updating lights" << std::endl;
 	if (!lights.Update(&list, true)) {
-		cout << "[ FAIL ] Updating lights" << endl;
+		std::cout << "[ FAIL ] Updating lights" << std::endl;
 		return 0;
 	}
-	cout << "[  OK  ] Updating lights" << endl;
+	std::cout << "[  OK  ] Updating lights" << std::endl;
+
+
+	std::cout << "[ .... ] Changing keyboard brightness" << std::endl;
+	byte kbLights[4] = {0x0, 0x1, 0x2, 0x3};
+	if (!lights.TurnOn(kbLights, 4, 50)) {
+		std::cout << "[ FAIL ] Changing keyboard brightness" << std::endl;
+		return 0;
+	}
+	std::cout << "[  OK  ] Changing keyboard brightness" << std::endl;
+
+	std::cout << "[ .... ] Changing Bar brightness" << std::endl;
+	byte barLights[12] = {0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF};
+	if (!lights.TurnOn(barLights, 12, 0)) {
+		std::cout << "[ FAIL ] Changing Bar brightness" << std::endl;
+		return 0;
+	}
+	std::cout << "[  OK  ] Changing Bar brightness" << std::endl;
+
 
 	return 0;
 }

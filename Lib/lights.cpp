@@ -278,16 +278,16 @@ namespace alienware {
 		return status ? status != ALIENFX_V4_BUSY : 0xff;
 	}
 
-	bool Lights::TurnOn(unsigned int brightness) {
-//		vector<Afx_icommand> mods{{3,(byte)(0x64 - bright)}};
-//		byte pos = 6;
-//		for (auto i = mappings->begin(); i < mappings->end(); i++)
-//			if (pos < length && (!i->flags || power)) {
-//				mods.push_back({pos,(byte)i->lightid});
-//				pos++;
-//			}
-//		mods.push_back({5,(byte)mappings->size()});
-//		return Send(COMMV4_turnOn,  &mods);
-		return false;
+	bool Lights::TurnOn(const byte *lights, unsigned int count, unsigned int brightness) {
+		if (brightness > 100) {
+			brightness = 100;
+		}
+		SetCommand(COMMV4_turnOn);
+		m_Buffer[3] = 100 - brightness;
+		m_Buffer[5] = (byte) count;
+		for (unsigned int i = 0; i < count; i++) {
+			m_Buffer[6 + i] = lights[i];
+		}
+		return Send();
 	}
 }
