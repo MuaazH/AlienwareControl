@@ -7,6 +7,8 @@
 
 namespace alienware {
 
+	#define ALEINWARE_VID 0x187c
+
 	// Maximal buffer size across all device types
 	#define MAX_BUFFERSIZE 65
 
@@ -57,7 +59,6 @@ namespace alienware {
 		int m_ProductID = -1;
 		int m_VenderID = -1;
 		int m_Length;
-		int m_Version;
 		bool m_WasReset = false;
 		byte m_Chain = 1; // seq. number for APIv1-v3
 

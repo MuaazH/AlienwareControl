@@ -58,14 +58,9 @@ namespace alienware {
 					m_VenderID = attributes.VendorID;
 
 					// Alienware
-					if (0x187c == m_VenderID) {
-						if (34 == m_Length) {
-							m_Version = API_V4;
-						}
-					}
-
-					flag = (m_Version != API_UNKNOWN);
-					if (flag) {
+					if (ALEINWARE_VID == m_VenderID && 34 == m_Length) {
+						m_Version = API_V4;
+						flag = true;
 						m_ProductID = attributes.ProductID;
 					} else {
 						CloseHandle(m_DevHandle);
@@ -267,7 +262,6 @@ namespace alienware {
 	}
 
 	byte Lights::GetDeviceStatus() {
-
 		byte buffer[MAX_BUFFERSIZE];
 		DWORD written = 0;
 		byte res = 0;
@@ -282,4 +276,15 @@ namespace alienware {
 		return status ? status != ALIENFX_V4_BUSY : 0xff;
 	}
 
+	bool Lights::SetBrights() {
+		vector<Afx_icommand> mods{{3,(byte)(0x64 - bright)}};
+		byte pos = 6;
+		for (auto i = mappings->begin(); i < mappings->end(); i++)
+			if (pos < length && (!i->flags || power)) {
+				mods.push_back({pos,(byte)i->lightid});
+				pos++;
+			}
+		mods.push_back({5,(byte)mappings->size()});
+		return PrepareAndSend(COMMV4_turnOn,  &mods);
+	}
 }

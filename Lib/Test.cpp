@@ -10,7 +10,7 @@ int main() {
 	Lights lights;
 
 	cout << "[ .... ] Initializing" << endl;
-	int pid = lights.Init(0x187c);
+	int pid = lights.Init(ALEINWARE_VID);
 	if (pid < 0) {
 		cout << "[ FAIL ] Initializing" << endl;
 		return 0;
