@@ -3,7 +3,7 @@ Alienware Control Center Alternative (Laptops only)
 It replaces the 1GB+ crap with this superior tiny project.
 
 # Credit
-Code based on https://github.com/T-Troll/alienfx-tools, thanks to T-Troll.
+Code based on https://github.com/T-Troll/alienfx-tools, thanks to @T-Troll.
 But his code shit. I needs a lot of clean up & optimization. I'm still working on it.
 
 # Support My Work
