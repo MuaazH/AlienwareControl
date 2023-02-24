@@ -58,7 +58,7 @@ namespace alienware {
 					m_VenderID = attributes.VendorID;
 
 					// Alienware
-					if (ALEINWARE_VID == m_VenderID && 34 == m_Length) {
+					if (ALEINWARE_VID == m_VenderID && ALEINWARE_LEN == m_Length) {
 						m_Version = API_V4;
 						flag = true;
 						m_ProductID = attributes.ProductID;
@@ -113,14 +113,7 @@ namespace alienware {
 			
 		}
 
-//		std::cout << "BUF: " ;
-//		for (int i = 0; i < MAX_BUFFERSIZE; i++) {
-//			std::cout << std::hex << (int) buffer[i] << " ";
-//		}
-//		std::cout << std::endl;
-
 		res = DeviceIoControl(m_DevHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, m_Length, 0, 0, &written, nullptr);
-//		res = DeviceIoControl(m_DevHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, size, 0, 0, &written, nullptr);
 		res &= DeviceIoControl(m_DevHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, m_Length, &written, nullptr);
 		return res;
 	}
@@ -251,13 +244,13 @@ namespace alienware {
 			if (GetDeviceStatus() == ALIENFX_V4_BUSY) {
 				break;
 			}
-			Sleep(10);
+			Sleep(5);
 		}
 	}
 
 	void Lights::WaitForReady() {
 		while (!IsDeviceReady()) {
-			Sleep(10);
+			Sleep(5);
 		}
 	}
 
@@ -276,15 +269,16 @@ namespace alienware {
 		return status ? status != ALIENFX_V4_BUSY : 0xff;
 	}
 
-	bool Lights::SetBrights() {
-		vector<Afx_icommand> mods{{3,(byte)(0x64 - bright)}};
-		byte pos = 6;
-		for (auto i = mappings->begin(); i < mappings->end(); i++)
-			if (pos < length && (!i->flags || power)) {
-				mods.push_back({pos,(byte)i->lightid});
-				pos++;
-			}
-		mods.push_back({5,(byte)mappings->size()});
-		return PrepareAndSend(COMMV4_turnOn,  &mods);
+	bool Lights::TurnOn(unsigned int brightness) {
+//		vector<Afx_icommand> mods{{3,(byte)(0x64 - bright)}};
+//		byte pos = 6;
+//		for (auto i = mappings->begin(); i < mappings->end(); i++)
+//			if (pos < length && (!i->flags || power)) {
+//				mods.push_back({pos,(byte)i->lightid});
+//				pos++;
+//			}
+//		mods.push_back({5,(byte)mappings->size()});
+//		return PrepareAndSend(COMMV4_turnOn,  &mods);
+		return false;
 	}
 }

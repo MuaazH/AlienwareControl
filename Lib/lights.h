@@ -8,9 +8,10 @@
 namespace alienware {
 
 	#define ALEINWARE_VID 0x187c
+	#define ALEINWARE_LEN 34
 
-	// Maximal buffer size across all device types
-	#define MAX_BUFFERSIZE 65
+//	// Maximal buffer size across all device types
+//	#define MAX_BUFFERSIZE 65
 
 	enum LightsVersion {
 //		API_ACPI = 0, //128
@@ -88,11 +89,8 @@ namespace alienware {
 		int Init(int vid, int pid = -1);
 		bool Reset();
 		void Close();
-
-		// Set multiply lights to different color.
-		// act - pointer to ArrayDeque of light control blocks (each define one light)
-		// store - need to save settings into device memory (v1-v4)
 		bool Update(ArrayDeque<LightBlock *> *act, bool store = false);
+		bool TurnOn(unsigned int brightness);
 	};
 }
 
