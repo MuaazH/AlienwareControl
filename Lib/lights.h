@@ -10,21 +10,18 @@ namespace alienware {
 	#define ALEINWARE_VID 0x187c
 	#define ALEINWARE_LEN 34
 
-//	// Maximal buffer size across all device types
-//	#define MAX_BUFFERSIZE 65
-
-	enum LightsVersion {
+//	enum LightsVersion {
 //		API_ACPI = 0, //128
 //		API_V8 = 8, //65
 //		API_V7 = 7, //65
 //		API_V6 = 6, //65
 //		API_V5 = 5, //64
-		API_V4 = 4, //34
+//		API_V4 = 4, //34
 //		API_V3 = 3, //12
 //		API_V2 = 2, //9
 //		API_V1 = 1, //8
-		API_UNKNOWN = -1
-	};
+//		API_UNKNOWN = -1
+//	};
 
 //	struct Command {
 //		byte i, val;
@@ -59,21 +56,14 @@ namespace alienware {
 		HANDLE m_DevHandle = nullptr;
 		int m_ProductID = -1;
 		int m_VenderID = -1;
-		int m_Length;
 		bool m_WasReset = false;
-		byte m_Chain = 1; // seq. number for APIv1-v3
+		byte m_Buffer[ALEINWARE_LEN];
 
-		bool PrepareAndSend(const byte *command, const byte *pMods, unsigned int modsLen);
-
-
-		// called from init
+		void SetCommand(const byte *command);
+		bool Send();
 		bool ProbeDevice(void* hDevInfo, void* devData, int vid, int pid);
-
-		// Next command delay for APIv1-v3
 		void WaitForBusy();
 		void WaitForReady();
-
-		// return current device state
 		byte GetDeviceStatus();
 
 		// false - not ready, true - ready, 0xff - stalled

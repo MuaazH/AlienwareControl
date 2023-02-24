@@ -7,7 +7,7 @@ extern "C" {
 #include <SetupAPI.h>
 #include "lightsConstants.h"
 
-//#include <iostream>
+// #include <iostream>
 
 namespace alienware {
 
@@ -54,12 +54,12 @@ namespace alienware {
 					HidD_GetPreparsedData(m_DevHandle, &prep_caps);
 					HidP_GetCaps(prep_caps, &caps);
 					HidD_FreePreparsedData(prep_caps);
-					m_Length = caps.OutputReportByteLength;
+					int length = caps.OutputReportByteLength;
 					m_VenderID = attributes.VendorID;
 
 					// Alienware
-					if (ALEINWARE_VID == m_VenderID && ALEINWARE_LEN == m_Length) {
-						m_Version = API_V4;
+					if (ALEINWARE_VID == m_VenderID && ALEINWARE_LEN == length) {
+						// m_Version = API_V4;
 						flag = true;
 						m_ProductID = attributes.ProductID;
 					} else {
@@ -93,28 +93,23 @@ namespace alienware {
 		return m_ProductID;
 	}
 
-	bool Lights::PrepareAndSend(const byte *command, const byte *pMods, unsigned int modsLen) {
-		byte buffer[MAX_BUFFERSIZE]{ reportIDList[m_Version] };
+	void Lights::SetCommand(const byte *command) {
+		memset(m_Buffer, 0, ALEINWARE_LEN);
+		// m_Buffer[0] = reportIDList[m_Version];
+		m_Buffer[0] = 0;
+		DWORD size = command[0];
+		memcpy(m_Buffer + 1, command + 1, size);
+	}
+
+	bool Lights::Send() {
+//		for (int i = 0; i < ALEINWARE_LEN; i++) {
+//			std::cout << ((int)m_Buffer[i] < 16 ? "0" : "") << std::hex << (int) m_Buffer[i];
+//		}
+//		std::cout << std::endl;
 
 		DWORD written;
-		DWORD size = command[0];
-		BOOL res = false;
-
-		memcpy(buffer+1, command+1, size);
-
-		if (modsLen) {
-			for (unsigned int i = 0; i < modsLen; i += 2) {
-				DWORD idx = pMods[i];
-				buffer[idx] = pMods[i+1];
-				if (idx >= size) {
-					size = idx + 1;
-				}
-			}
-			
-		}
-
-		res = DeviceIoControl(m_DevHandle, IOCTL_HID_SET_OUTPUT_REPORT, buffer, m_Length, 0, 0, &written, nullptr);
-		res &= DeviceIoControl(m_DevHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, m_Length, &written, nullptr);
+		bool res = DeviceIoControl(m_DevHandle, IOCTL_HID_SET_OUTPUT_REPORT, m_Buffer, ALEINWARE_LEN, 0, 0, &written, nullptr);
+		res &= DeviceIoControl(m_DevHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, m_Buffer, ALEINWARE_LEN, &written, nullptr);
 		return res;
 	}
 
@@ -138,64 +133,62 @@ namespace alienware {
 
 	bool Lights::SetAction(byte index, ArrayDeque<Action *> *pActions) {
 		// fixme: this code is full of bad practices by the original author
-		byte modsSelect[2] = {6, index};
-		if (!PrepareAndSend(COMMV4_colorSel, modsSelect, 2)) {
+
+		// byte modsSelect[2] = {6, index};
+		SetCommand(COMMV4_colorSel);
+		m_Buffer[6] = index;
+		if (!Send()) {
 			return false;
 		}
 
-		byte bPos = 3;
-		DWORD len = 0;
-		byte mods[MAX_BUFFERSIZE];
+		DWORD bPos = 3;
+		SetCommand(COMMV4_colorSet);
 		ArrayDeque<Action *>& actions = *pActions;
 		for (unsigned int i = 0; i < actions.Size(); i++) {
 			auto ca = actions[i];
 			// 3 actions per record..
-			mods[len++] = bPos;
-			mods[len++] = (byte) (ca->type < AlienFX_A_Breathing ? ca->type : AlienFX_A_Morph);
 
-			mods[len++] = (byte)(bPos + 1);
-			mods[len++] = ca->time;
+			m_Buffer[bPos++] = (byte) (ca->type < AlienFX_A_Breathing ? ca->type : AlienFX_A_Morph);
+			m_Buffer[bPos++] = ca->time;
+			m_Buffer[bPos++] = v4OpCodes[ca->type];
+			bPos++;
+			m_Buffer[bPos++] = ca->type == AlienFX_A_Color ? 0xfa : ca->tempo;
+			m_Buffer[bPos++] = ca->r;
+			m_Buffer[bPos++] = ca->g;
+			m_Buffer[bPos++] = ca->b;
 
-			mods[len++] = (byte)(bPos + 2);
-			mods[len++] = v4OpCodes[ca->type];
-
-			mods[len++] = (byte)(bPos + 4);
-			mods[len++] = (byte)(ca->type == AlienFX_A_Color ? 0xfa : ca->tempo);
-
-			mods[len++] = (byte)(bPos + 5);
-			mods[len++] = ca->r;
-
-			mods[len++] = (byte)(bPos + 6);
-			mods[len++] = ca->g;
-
-			mods[len++] = (byte)(bPos + 7);
-			mods[len++] = ca->b;
-
-			bPos += 8;
-			if (bPos + 8 >= m_Length) {
-				if (!PrepareAndSend(COMMV4_colorSet, mods, len)) {
+			if (bPos + 8 >= ALEINWARE_LEN) {
+				if (!Send()) {
 					return false;
 				}
+				SetCommand(COMMV4_colorSet);
 				bPos = 3;
-				len = 0;
 			}
 		}
 		if (bPos > 3) {
-			return PrepareAndSend(COMMV4_colorSet, mods, len);
+			return Send();
 		}
 		return true;
 	}
 
 	bool Lights::SetPowerAction(ArrayDeque<LightBlock *> *act, bool save) {
 		UpdateColors();
-		byte cmd1[4] = { 4, 0x4, 6, 0x61 };
-		if (!PrepareAndSend(COMMV4_control, cmd1, 4)) {
+		// byte cmd1[4] = { 4, 0x4, 6, 0x61 };
+		SetCommand(COMMV4_control);
+		m_Buffer[4] = 0x4;
+		m_Buffer[6] = 0x61;
+		if (!Send()) {
 			return false;
 		}
-		byte cmd2[4] = { 4, 0x1, 6, 0x61 };
-		if (!PrepareAndSend(COMMV4_control, cmd2, 4)) {
+
+		// byte cmd2[4] = { 4, 0x1, 6, 0x61 };
+		SetCommand(COMMV4_control);
+		m_Buffer[4] = 0x1;
+		m_Buffer[6] = 0x61;
+		if (!Send()) {
 			return false;
 		}
+
 		auto sz = act->Size();
 		for (unsigned int i = 0; i < sz; i++) {
 			auto ca = (*act)[i];
@@ -203,19 +196,34 @@ namespace alienware {
 				if (!SetAction(ca->index, &ca->act))
 					return false;
 		}
-		byte cmd3[4] = { 4, 0x2, 6, 0x61 };
-		if (!PrepareAndSend(COMMV4_control, cmd3, 4)) {
+
+		// byte cmd3[4] = { 4, 0x2, 6, 0x61 };
+		SetCommand(COMMV4_control);
+		m_Buffer[4] = 0x2;
+		m_Buffer[6] = 0x61;
+		if (!Send()) {
 			return false;
 		}
-		byte cmd4[4] = { 4, 0x6, 6, 0x61 };
-		return PrepareAndSend(COMMV4_control, cmd4, 4);
+
+		// byte cmd4[4] = { 4, 0x6, 6, 0x61 };
+		SetCommand(COMMV4_control);
+		m_Buffer[4] = 0x6;
+		m_Buffer[6] = 0x61;
+		return Send();
 	}
 
 	bool Lights::Reset() {
-		byte cmd1[2] = {4, 4};
-		PrepareAndSend(COMMV4_control, cmd1, 2);
-		byte cmd2[2] = {4, 1};
-		bool result = PrepareAndSend(COMMV4_control, cmd2, 2);
+		// byte cmd1[2] = {4, 4};
+		SetCommand(COMMV4_control);
+		m_Buffer[4] = 4;
+		if (!Send()) {
+			return false;
+		}
+		
+		// byte cmd2[2] = {4, 1};
+		SetCommand(COMMV4_control);
+		m_Buffer[4] = 1;
+		bool result = Send();
 		m_WasReset = result;
 		return result;
 	}
@@ -223,7 +231,8 @@ namespace alienware {
 	bool Lights::UpdateColors() {
 		bool res = false;
 		if (m_WasReset) {
-			res = PrepareAndSend(COMMV4_control, nullptr, 0);
+			SetCommand(COMMV4_control);
+			res = Send();
 			WaitForReady();
 			m_WasReset = false;
 			Sleep(5); // Fix for ultra-fast updates, or next command will fail sometimes.
@@ -255,10 +264,10 @@ namespace alienware {
 	}
 
 	byte Lights::GetDeviceStatus() {
-		byte buffer[MAX_BUFFERSIZE];
+		byte buffer[ALEINWARE_LEN];
 		DWORD written = 0;
 		byte res = 0;
-		if (DeviceIoControl(m_DevHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, m_Length, &written, NULL))
+		if (DeviceIoControl(m_DevHandle, IOCTL_HID_GET_INPUT_REPORT, 0, 0, buffer, ALEINWARE_LEN, &written, NULL))
 			res = buffer[2];
 
 		return res;
@@ -278,7 +287,7 @@ namespace alienware {
 //				pos++;
 //			}
 //		mods.push_back({5,(byte)mappings->size()});
-//		return PrepareAndSend(COMMV4_turnOn,  &mods);
+//		return Send(COMMV4_turnOn,  &mods);
 		return false;
 	}
 }

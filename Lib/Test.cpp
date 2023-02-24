@@ -24,7 +24,7 @@ int main() {
 
 	Action color1 = { AlienFX_A_Color, 160, 160,   0, 100, 255 };
 	Action color2 = { AlienFX_A_Color, 160, 160, 255,  70,   0 };
-	Action color3 = { AlienFX_A_Color, 160, 160,   0,   0,   2 };
+	Action color3 = { AlienFX_A_Color, 160, 160,   0,   4,   4 };
 
 
 	LightBlock kb0 = { 0 };
@@ -74,7 +74,6 @@ int main() {
 
 	LightBlock barB = { 0xF };
 	barB.act.Add(&color3);
-
 
 	list.Add(&kb0);
 	list.Add(&kb1);
