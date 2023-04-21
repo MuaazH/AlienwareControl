@@ -172,12 +172,29 @@ namespace alienware {
 		return !CallWMIMethod(setPowerMode, level);
 	}
 
+	int FansControl::GetPower() {
+		int pl = CallWMIMethod(getPowerMode);
+		for (unsigned int i = 0; pl >= 0 && i < m_powers.Size(); i++)
+			if (m_powers[i] == pl)
+				return pl;
+		return -1;
+	}
+
 	bool FansControl::SetGMode(bool state) {
 		if (state) {
 			return SetPower(0xAB) && CallWMIMethod(setGMode, state) == 1;
 		} else {
 			return SetPower(0x0);
 		}
+	}
+
+	int FansControl::GetGMode() {
+		int p1 = CallWMIMethod(getPowerMode);
+		if (p1 < 0)                   return -1;
+		if (p1 == 0xAB)               return 1;
+		int p2 = CallWMIMethod(getGMode);
+		if (p2 > 0)                   return 1;
+		return p2 < 0? -1 : 0;
 	}
 
 	int FansControl::CallWMIMethod(byte com, byte arg1, byte arg2) {
@@ -196,5 +213,33 @@ namespace alienware {
 			return result.intVal;
 		}
 		return -1;
+	}
+
+	int FansControl::GetTemperature(unsigned int sensor) {
+		if (sensor >= m_SensorCount) return -1;
+
+		int awt = CallWMIMethod(getTemp, m_Sensors[sensor]);
+		// Bugfix for AWCC temp - it can be up to 5000C!
+		return awt > 200 ? -2 : awt;
+	}
+
+	int FansControl::GetFanPercent(unsigned int fan) {
+		return fan < m_FanCount ? CallWMIMethod(getFanPercent, (byte) m_Fans[fan].id) : -1;
+	}
+
+	int FansControl::GetFanRPM(unsigned int fan) {
+		return fan < m_FanCount ? CallWMIMethod(getFanRPM, (byte) m_Fans[fan].id) : -1;
+	}
+
+	int FansControl::GetMaxRPM(unsigned int fan) {
+		return fan < m_FanCount ? CallWMIMethod(getMaxRPM, (byte) m_Fans[fan].id) : -1;
+	}
+
+	int FansControl::GetFanBoost(unsigned int fan) {
+		return fan < m_FanCount ? CallWMIMethod(getFanBoost, (byte) m_Fans[fan].id) : -1;
+	}
+
+	int FansControl::SetFanBoost(unsigned int fan, byte value) {
+		return fan < m_FanCount ? CallWMIMethod(setFanBoost, (byte) m_Fans[fan].id, value) : -1;
 	}
 }

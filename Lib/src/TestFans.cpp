@@ -14,19 +14,28 @@ int main() {
 		return 0;
 	}
 	std::cout << "[  OK  ] Initializing" << std::endl;
-	std::cout << "[ .... ] Powering up fans" << std::endl;
-	if (fans.SetGMode(true)) {
-		std::cout << "[  OK  ] Powering up fans" << std::endl;
-		Sleep(5000);
-		std::cout << "[ .... ] Powering down fans" << std::endl;
-		if (fans.SetGMode(false)) {
-			std::cout << "[  OK  ] Powering down fans" << std::endl;
-		} else {
-			std::cout << "[ FAIL ] Powering down fans" << std::endl;
+
+	std::cout << "[ .... ] Found " << fans.GetFanCount() << " fan(s) and " << fans.GetSensorCount() << " sensor(s)" << std::endl;
+	int temp;
+
+	while (1) {
+		temp = 0;
+		std::cout << std::endl << std::endl << std::endl << std::endl << std::endl;
+		for (unsigned int i = 0; i < fans.GetFanCount(); i++) {
+			int t = fans.GetTemperature(i);
+			temp = t < temp ? temp : t;
+			std::cout << "[ .... ] Fan " << fans.GetFanID(i) 
+					  << " RPM " << fans.GetFanRPM(i) << "/" << fans.GetMaxRPM(i)
+					  << " Boost " << fans.GetFanBoost(i)
+					  << " Temperature: " << t
+					  << std::endl;
 		}
-	} else {
-		std::cout << "[ FAIL ] Powering up fans" << std::endl;
+		fans.SetGMode(temp > 70);
+		Sleep(10000);
 	}
-	std::cout << "[ .... ] Quiting" << std::endl;
+
+//	std::cout << "[ .... ] Press enter to power down fans" << std::endl;
+//	std::cin.ignore();
+
 	return 0;
 }

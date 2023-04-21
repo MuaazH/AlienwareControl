@@ -8,7 +8,7 @@
 namespace alienware {
 
 	struct FanInfo {
-		byte id, type;
+		int id, type;
 	};
 
 	enum {
@@ -32,18 +32,18 @@ namespace alienware {
 
 	class FansControl {
 	private:
-		byte m_SysType;
-		DWORD m_systemID;
-		VARIANT m_instancePath;
-		IWbemClassObject* m_pInParamaters;
-		IWbemServices* m_pWbemServices;
-		IWbemClassObject* m_pAWCCGetObj;
+		byte                   m_SysType;
+		DWORD                  m_systemID;
+		VARIANT                m_instancePath;
+		IWbemClassObject      *m_pInParamaters;
+		IWbemServices         *m_pWbemServices;
+		IWbemClassObject      *m_pAWCCGetObj;
 		// Arrays of sensors, fans, max. boosts and power values detected at Probe()
-		int m_Sensors[MAX_SENSOR_COUNT];
-		FanInfo m_Fans[MAX_FAN_COUNT];
-		unsigned int m_SensorCount;
-		unsigned int m_FanCount;
-		ArrayDeque<byte> m_powers;
+		byte                   m_Sensors[MAX_SENSOR_COUNT];
+		FanInfo                m_Fans[MAX_FAN_COUNT];
+		unsigned int           m_SensorCount;
+		unsigned int           m_FanCount;
+		ArrayDeque<byte>       m_powers;
 
 		bool Probe();
 
@@ -56,32 +56,28 @@ namespace alienware {
 		// Result: true - compatible hardware found, false - not found.
 		bool Init();
 
-		// Get RPM for the fan index fanID at fans[]
-		// Result: fan RPM
-		int GetFanRPM(int fanID);
-
-		// Get Max. RPM for fan index fanID
-		int GetMaxRPM(int fanID);
-
-		// Get fan RPMs as a percent of RPM
-		// Result: percent of the fan speed
-		int GetFanPercent(int fanID);
+		// Set boost value for the fan index fanID at fans[]. If force, raw value set, otherwise cooked by boost.
+		// Result: value or error
+		int SetFanBoost(unsigned int fan, byte value);
 
 		// Get boost value for the fan index fanID at fans[]. If force, raw value returned, otherwise cooked by boost
 		// Result: Error or raw value if forced, otherwise cooked by boost.
-		int GetFanBoost(int fanID);
+		int GetFanBoost(unsigned int fan);
 
-		// Set boost value for the fan index fanID at fans[]. If force, raw value set, otherwise cooked by boost.
-		// Result: value or error
-		int SetFanBoost(int fanID, byte value/*, bool force = false*/);
+		// Get RPM for the fan index fanID at fans[]
+		// Result: fan RPM
+		int GetFanRPM(unsigned int fan);
+
+		// Get Max. RPM for fan index fanID
+		int GetMaxRPM(unsigned int fan);
+
+		// Get fan RPMs as a percent of RPM
+		// Result: percent of the fan speed
+		int GetFanPercent(unsigned int fan);
 
 		// Get temperature value for the sensor index TanID at sensors[]
 		// Result: temperature value or error
-		int GetTempValue(int TempID);
-
-		// Unlock manual fan operations. The same as SetPower(0)
-		// Result: raw value set or error
-		int Unlock();
+		int GetTemperature(unsigned int sensor);
 
 		// Set system power profile to defined power code (NOT level)
 		// Result: raw value set or error
@@ -97,12 +93,17 @@ namespace alienware {
 		// Check G-mode state
 		int GetGMode();
 
-		// Return current device ID
-		inline DWORD GetSystemID() { return m_systemID; };
-
 		// Call custom Alienware method trough WMI
 		int CallWMIMethod(byte com, byte arg1 = 0, byte arg2 = 0);
 
+		// Return current device ID
+		inline DWORD GetSystemID() { return m_systemID; };
+
+		unsigned int GetFanCount() { return m_FanCount; }
+
+		unsigned int GetSensorCount() { return m_SensorCount; }
+
+		int GetFanID(unsigned int fan) { return fan < m_FanCount ? m_Fans[fan].id : -1; }
 	};
 
 }
